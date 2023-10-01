@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type album struct {
@@ -61,16 +61,16 @@ func getAlbumById(c *gin.Context) {
 }
 
 func healthCheck(c *gin.Context) {
-	conn, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
+	dbpool, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "unable to connect to database :("})
 		return
 	}
 
-	defer conn.Close(context.Background())
+	defer dbpool.Close()
 
 	var message string
-	err = conn.QueryRow(context.Background(), "SELECT 'healthy';").Scan(&message)
+	err = dbpool.QueryRow(context.Background(), "SELECT 'healthy';").Scan(&message)
 
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "unable to query database :(", "error": err})
