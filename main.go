@@ -16,6 +16,12 @@ type album struct {
 	Price  float64 `json:"price"`
 }
 
+type albumdb struct {
+	Title  string  `json:"title"`
+	Artist string  `json:"artist"`
+	Price  float64 `json:"price"`
+}
+
 var albums = []album{
 	{ID: "1", Title: "Blue Train", Artist: "John Coltrane", Price: 56.99},
 	{ID: "2", Title: "Jeru", Artist: "Gerry Mulligan", Price: 17.99},
@@ -35,7 +41,32 @@ func main() {
 }
 
 func getAlbums(c *gin.Context) {
-	c.IndentedJSON(http.StatusOK, albums)
+	dbpool, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "unable to connect to database :("})
+		return
+	}
+
+	defer dbpool.Close()
+
+	rows, err := dbpool.Query(context.Background(), "SELECT album FROM albums;")
+
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "unable to query database :(", "error": err})
+		return
+	}
+	defer rows.Close()
+
+	var rowSlice []albumdb
+	for rows.Next() {
+		var r albumdb
+		err := rows.Scan(&r)
+		if err != nil {
+			c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": err})
+		}
+		rowSlice = append(rowSlice, r)
+	}
+	c.IndentedJSON(http.StatusOK, rowSlice)
 }
 
 func postAlbums(c *gin.Context) {
