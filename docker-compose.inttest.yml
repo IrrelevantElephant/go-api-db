@@ -1,0 +1,9 @@
+services:
+  integrationtests:
+    build:
+      dockerfile: Dockerfile
+      context: ./integrationtests
+    environment:
+      - SUT_URL=http://goapi:8080
+    depends_on:
+      - goapi

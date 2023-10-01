@@ -9,9 +9,9 @@ services:
       - PGUSER=postgres
     healthcheck:
       test: ["CMD-SHELL", "pg_isready", "-d", "db_prod"]
-      interval: 5s
+      interval: 1s
       timeout: 60s
-      retries: 10
+      retries: 60
       start_period: 80s
   
   migrator:
@@ -23,6 +23,13 @@ services:
       - PGPASSWORD=mypassword
       - PGHOST=database
       - PGDATABASE=postgres
+    healthcheck:
+      # got to be a better way to do this1
+      test: bash -c "[ -f /databasemigrations/FINISHED ]"
+      interval: 1s
+      timeout: 60s
+      retries: 60
+      start_period: 80s
     depends_on:
       database:
         condition: service_healthy

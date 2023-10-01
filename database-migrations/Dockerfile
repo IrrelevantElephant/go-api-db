@@ -2,7 +2,8 @@ FROM alpine
 
 WORKDIR /databasemigrations
 
-RUN apk add postgresql-client
+# need bash for healthcheck - try to improve this
+RUN apk update && apk add bash && apk add postgresql-client
 
 COPY ./migration.sql .
 COPY ./insert-data.sql .

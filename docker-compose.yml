@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   goapi:
     build: 
@@ -7,3 +9,6 @@ services:
       - 8080:8080
     environment:
       - DATABASE_URL=postgres://postgres:mypassword@database:5432/postgres
+    depends_on:
+      migrator:
+        condition: service_healthy
