@@ -79,6 +79,7 @@ func postAlbums(c *gin.Context) {
 		return
 	}
 
+	// protocol should be configurable
 	var location = fmt.Sprintf("http://%s/%s/%d", c.Request.Host, "albums", id)
 	c.Header("location", location)
 	c.IndentedJSON(http.StatusCreated, gin.H{"newid": id})
