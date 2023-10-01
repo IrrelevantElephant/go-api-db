@@ -75,8 +75,25 @@ func postAlbums(c *gin.Context) {
 		return
 	}
 
-	albums = append(albums, newAlbum)
-	c.IndentedJSON(http.StatusCreated, newAlbum)
+	// newalbumdb = c.Request.Body
+
+	dbpool, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "unable to connect to database :("})
+		return
+	}
+
+	defer dbpool.Close()
+
+	// TODO: get it to actually return the id
+	id, err := dbpool.Exec(context.Background(), "INSERT INTO albums (album) VALUES ($1) RETURNING id;", newAlbum)
+
+	if err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"error": err})
+		return
+	}
+
+	c.IndentedJSON(http.StatusCreated, gin.H{"newid": id})
 }
 
 func getAlbumById(c *gin.Context) {
