@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 
@@ -70,14 +71,16 @@ func postAlbums(c *gin.Context) {
 
 	defer dbpool.Close()
 
-	// TODO: get it to actually return the id
-	id, err := dbpool.Exec(context.Background(), "INSERT INTO albums (album) VALUES ($1) RETURNING id;", newAlbum)
+	var id int
+	err = dbpool.QueryRow(context.Background(), "INSERT INTO albums (album) VALUES ($1) RETURNING id;", newAlbum).Scan(&id)
 
 	if err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"error": err})
 		return
 	}
 
+	var location = fmt.Sprintf("http://%s/%s/%d", c.Request.Host, "albums", id)
+	c.Header("location", location)
 	c.IndentedJSON(http.StatusCreated, gin.H{"newid": id})
 }
 
