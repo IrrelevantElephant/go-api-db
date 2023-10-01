@@ -7,9 +7,29 @@ services:
       - 8080:8080
 
   database:
-    image: postgres:16-alpine
+    image: postgres:14-alpine
     ports:
       - 5432:5432
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=mypassword
+      - PGUSER=postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-d", "db_prod"]
+      interval: 5s
+      timeout: 60s
+      retries: 10
+      start_period: 80s
+  
+  migrator:
+    build:
+      dockerfile: Dockerfile
+      context: ./database-migrations
+    environment:
+      - POSTGRES_USER=postgres
+      - PGPASSWORD=mypassword
+      - PGHOST=database
+      - PGDATABASE=postgres
+    depends_on:
+      database:
+        condition: service_healthy
