@@ -82,13 +82,23 @@ func postAlbums(c *gin.Context) {
 func getAlbumById(c *gin.Context) {
 	id := c.Param("id")
 
-	for _, a := range albums {
-		if a.ID == id {
-			c.IndentedJSON(http.StatusOK, a)
-			return
-		}
+	dbpool, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "unable to connect to database :("})
+		return
 	}
-	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "album not found"})
+
+	defer dbpool.Close()
+
+	var album albumdb
+	err = dbpool.QueryRow(context.Background(), "SELECT album FROM albums where id = $1;", id).Scan(&album)
+
+	if err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "specified id not found"})
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, album)
 }
 
 func healthCheck(c *gin.Context) {
