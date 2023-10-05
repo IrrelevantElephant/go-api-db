@@ -29,7 +29,7 @@ func main() {
 }
 
 func getAlbums(c *gin.Context) {
-	dbpool, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
+	dbpool, err := pgxpool.New(context.Background(), getDatabaseUrl())
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "unable to connect to database :("})
 		return
@@ -63,7 +63,7 @@ func postAlbums(c *gin.Context) {
 		return
 	}
 
-	dbpool, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
+	dbpool, err := pgxpool.New(context.Background(), getDatabaseUrl())
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "unable to connect to database :("})
 		return
@@ -88,7 +88,7 @@ func postAlbums(c *gin.Context) {
 func getAlbumById(c *gin.Context) {
 	id := c.Param("id")
 
-	dbpool, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
+	dbpool, err := pgxpool.New(context.Background(), getDatabaseUrl())
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "unable to connect to database :("})
 		return
@@ -108,7 +108,7 @@ func getAlbumById(c *gin.Context) {
 }
 
 func healthCheck(c *gin.Context) {
-	dbpool, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
+	dbpool, err := pgxpool.New(context.Background(), getDatabaseUrl())
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "unable to connect to database :("})
 		return
@@ -125,4 +125,8 @@ func healthCheck(c *gin.Context) {
 	}
 
 	c.IndentedJSON(http.StatusOK, gin.H{"message": "healthy :)"})
+}
+
+func getDatabaseUrl() string {
+	return os.Getenv("DATABASE_URL")
 }
