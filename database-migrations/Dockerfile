@@ -1,14 +1,18 @@
+FROM golang:1.21-alpine as build
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY *.go ./
+
+RUN CGO_ENABLED=0 GOOS=linux go build -o main
+
 FROM alpine
 
-WORKDIR /databasemigrations
+COPY --from=build /app/main /main
 
-# need bash for healthcheck - try to improve this
-RUN apk update && apk add bash && apk add postgresql-client
+EXPOSE 8080
 
-COPY ./migration.sql .
-COPY ./insert-data.sql .
-COPY ./migrate.sh .
-
-RUN chmod +x ./migrate.sh
-
-ENTRYPOINT [ "./migrate.sh" ]
+CMD ["./main"]

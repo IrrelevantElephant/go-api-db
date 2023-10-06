@@ -8,9 +8,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 type album struct {
+	Id     uint    `gorm:"primaryKey"`
 	Title  string  `json:"title"`
 	Artist string  `json:"artist"`
 	Price  float64 `json:"price"`
@@ -29,31 +32,16 @@ func main() {
 }
 
 func getAlbums(c *gin.Context) {
-	dbpool, err := pgxpool.New(context.Background(), getDatabaseUrl())
-	if err != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "unable to connect to database :("})
-		return
-	}
-
-	defer dbpool.Close()
-
-	rows, err := dbpool.Query(context.Background(), "SELECT album FROM albums;")
-
-	if err != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "unable to query database :(", "error": err})
-		return
-	}
-	defer rows.Close()
-
 	var rowSlice []album
-	for rows.Next() {
-		var r album
-		err := rows.Scan(&r)
-		if err != nil {
-			c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": err})
-		}
-		rowSlice = append(rowSlice, r)
+	var dsn = getDatabaseUrl()
+
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		panic("failed to connect database")
 	}
+
+	db.Find(&rowSlice)
+
 	c.IndentedJSON(http.StatusOK, rowSlice)
 }
 
@@ -63,46 +51,32 @@ func postAlbums(c *gin.Context) {
 		return
 	}
 
-	dbpool, err := pgxpool.New(context.Background(), getDatabaseUrl())
+	var dsn = getDatabaseUrl()
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "unable to connect to database :("})
-		return
+		panic("failed to connect database")
 	}
 
-	defer dbpool.Close()
-
-	var id int
-	err = dbpool.QueryRow(context.Background(), "INSERT INTO albums (album) VALUES ($1) RETURNING id;", newAlbum).Scan(&id)
-
-	if err != nil {
-		c.IndentedJSON(http.StatusNotFound, gin.H{"error": err})
-		return
-	}
+	db.AutoMigrate(&album{})
+	db.Create(&newAlbum)
 
 	// protocol should be configurable
-	var location = fmt.Sprintf("http://%s/%s/%d", c.Request.Host, "albums", id)
+	var location = fmt.Sprintf("http://%s/%s/%d", c.Request.Host, "albums", newAlbum.Id)
+
 	c.Header("location", location)
-	c.IndentedJSON(http.StatusCreated, gin.H{"newid": id})
+	c.IndentedJSON(http.StatusCreated, gin.H{"newid": newAlbum.Id})
 }
 
 func getAlbumById(c *gin.Context) {
 	id := c.Param("id")
 
-	dbpool, err := pgxpool.New(context.Background(), getDatabaseUrl())
+	var dsn = getDatabaseUrl()
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "unable to connect to database :("})
-		return
+		panic("failed to connect database")
 	}
-
-	defer dbpool.Close()
-
 	var album album
-	err = dbpool.QueryRow(context.Background(), "SELECT album FROM albums where id = $1;", id).Scan(&album)
-
-	if err != nil {
-		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "specified id not found"})
-		return
-	}
+	db.First(&album, id)
 
 	c.IndentedJSON(http.StatusOK, album)
 }
