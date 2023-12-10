@@ -12,7 +12,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type album struct {
+type Album struct {
 	Id     uint    `gorm:"primaryKey"`
 	Title  string  `json:"title"`
 	Artist string  `json:"artist"`
@@ -32,7 +32,7 @@ func main() {
 }
 
 func getAlbums(c *gin.Context) {
-	var rowSlice []album
+	var rowSlice []Album
 	var dsn = getDatabaseUrl()
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
@@ -46,7 +46,7 @@ func getAlbums(c *gin.Context) {
 }
 
 func postAlbums(c *gin.Context) {
-	var newAlbum album
+	var newAlbum Album
 	if err := c.BindJSON(&newAlbum); err != nil {
 		return
 	}
@@ -57,7 +57,7 @@ func postAlbums(c *gin.Context) {
 		panic("failed to connect database")
 	}
 
-	db.AutoMigrate(&album{})
+	db.AutoMigrate(&Album{})
 	db.Create(&newAlbum)
 
 	// protocol should be configurable
@@ -75,7 +75,7 @@ func getAlbumById(c *gin.Context) {
 	if err != nil {
 		panic("failed to connect database")
 	}
-	var album album
+	var album Album
 	db.First(&album, id)
 
 	c.IndentedJSON(http.StatusOK, album)

@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type album struct {
+type Album struct {
 	Id     uint    `gorm:"primaryKey"`
 	Title  string  `json:"title"`
 	Artist string  `json:"artist"`
@@ -23,7 +23,7 @@ func main() {
 		panic("failed to connect database")
 	}
 
-	db.AutoMigrate(&album{})
+	db.AutoMigrate(&Album{})
 
 	router := gin.Default()
 	router.GET("/health", func(c *gin.Context) { c.IndentedJSON(http.StatusOK, gin.H{"message": "healthy :)"}) })
